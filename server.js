@@ -9,8 +9,18 @@ app.use(express.json());
 
 let rooms = new Map();
 
-app.get('/rooms', (req, res) => {
-    res.json(rooms);
+app.get('/rooms/:id', (req, res) => {
+    const roomId = req.params.id;
+
+    console.log('room id', roomId)
+    const obj = rooms.has(roomId) ? {
+        users: [...rooms.get(roomId).get('users').values()],
+        messages: [...rooms.get(roomId).get('messages').values()]
+    } : {
+        users: [],
+        messages: []
+    }
+    res.json(obj);
 });
 
 app.post('/rooms', (req, res) => {
@@ -20,9 +30,6 @@ app.post('/rooms', (req, res) => {
             ['users', new Map()],
             ['messages', []]
         ]))
-    }
-    else {
-        //
     }
     res.send();
 });
@@ -34,10 +41,18 @@ io.on('connection', socket => {
         socket.join(roomId);
         rooms.get(roomId).get('users').set(socket.id, userName);
         const users = [...rooms.get(roomId).get('users').values()];
-        socket.to(roomId).broadcast.emit('ROOM:JOINED', users);
-    })
+        socket.to(roomId).broadcast.emit('ROOM:SET-USERS', users);
+    });
 
-    socket.on('disconnected', () => {
+    socket.on('ROOM:NEW-MESSAGE', ({roomId, userName, text}) => {
+        debugger
+        const obj = {userName, text};
+        rooms.get(roomId).get('messages').push(obj);
+        socket.to(roomId).broadcast.emit('ROOM:NEW-MESSAGE', obj);
+
+    });
+
+    socket.on('disconnect', () => {
         rooms.forEach( (value, roomId) => {
             if (value.get('users').delete(socket.id)) {
                 const users = [...value.get('users').values()];

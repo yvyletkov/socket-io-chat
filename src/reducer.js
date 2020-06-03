@@ -12,9 +12,9 @@ export default (state, action) => {
                 users: action.users
             }
         }
-        case 'SET-MESSAGES': {
+        case 'SET-NEW-MESSAGE': {
             return {...state,
-                messages: action.messages
+                messages: [...state.messages, action.payload]
             }
         }
         default: {

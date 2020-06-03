@@ -4,6 +4,7 @@ import socket from "./socket";
 import reducer from './reducer'
 import JoinBlock from "./components/JoinBlock";
 import Chat from "./components/Chat";
+import axios from "axios";
 
 function App() {
 
@@ -15,24 +16,26 @@ function App() {
         messages: []
     });
 
-    const onLogin = (obj) => {
+    const onLogin = async obj => {
         dispatch({type: 'SET-JOINED', payload: obj});
         socket.emit('ROOM:JOIN', obj);
+        const data = await axios.get(`/rooms/${obj.roomId}`, obj);
+        console.log('dataaaaaaa', data.data)
+        setUsers(data.data.users)
     };
 
     const setUsers = (users) => {
         dispatch({type: 'SET-USERS', users})
-    }
+    };
+    const setNewMessage = (message) => {
+        debugger
+        dispatch({type: 'SET-NEW-MESSAGE', payload: message})
+    };
 
     React.useEffect( () => {
-        socket.on('ROOM:JOINED', users => {
-            console.log('user joined chat; users array: ', users);
-            setUsers(users);
-        });
-        socket.on('ROOM:SET-USERS', users => {
-            console.log('user leaved chat; users array: ', users);
-            setUsers(users);
-        });
+        debugger
+        socket.on('ROOM:SET-USERS', setUsers);
+        socket.on('ROOM:NEW-MESSAGE', setNewMessage);
     }, []);
 
     window.socket = socket;
@@ -41,7 +44,7 @@ function App() {
 
     return (
         <div className="wrapper">
-            {!state.isJoined ? <JoinBlock onLogin={onLogin}/> : <Chat users={state.users}/>}
+            {!state.isJoined ? <JoinBlock onLogin={onLogin} /> : <Chat {...state} onAddNewMessage={setNewMessage} />}
         </div>
     );
 }
