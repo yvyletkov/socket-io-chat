@@ -5,9 +5,9 @@ const app = express();
 const server = require('http').Server(app);
 const io = useSocket(server);
 
-app.use(express.json())
+app.use(express.json());
 
-const rooms = new Map();
+let rooms = new Map();
 
 app.get('/rooms', (req, res) => {
     res.json(rooms);
@@ -21,16 +21,29 @@ app.post('/rooms', (req, res) => {
             ['messages', []]
         ]))
     }
-    else rooms.set(roomId, [...rooms.get(roomId), userName]);
+    else {
+        //
+    }
     res.send();
 });
 
 io.on('connection', socket => {
     console.log('user connected', socket.id);
+
     socket.on('ROOM:JOIN', ({roomId, userName}) => {
         socket.join(roomId);
-        rooms.get(roomId).get('users').socket(socket.id, userName);
-        const users = rooms.get(roomId).get('users').values()
+        rooms.get(roomId).get('users').set(socket.id, userName);
+        const users = [...rooms.get(roomId).get('users').values()];
+        socket.to(roomId).broadcast.emit('ROOM:JOINED', users);
+    })
+
+    socket.on('disconnected', () => {
+        rooms.forEach( (value, roomId) => {
+            if (value.get('users').delete(socket.id)) {
+                const users = [...value.get('users').values()];
+                socket.to(roomId).broadcast.emit('ROOM:SET-USERS', users);
+            }
+        })
     })
 })
 
