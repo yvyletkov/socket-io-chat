@@ -1,26 +1,31 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import socket from "./socket";
+import reducer from './reducer'
+import JoinBlock from "./components/JoinBlock";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+
+    const [state, dispatch] = React.useReducer(reducer, {
+        isJoined: false,
+        roomId: null,
+        userName: null
+    });
+
+    const onLogin = (obj) => {
+        dispatch({type: 'SET-JOINED', payload: obj});
+        socket.emit('ROOM:JOIN', obj);
+
+    }
+
+    console.log('state = ', state);
+
+    return (
+        <div className="wrapper">
+            {/*{!state.isAuth && <JoinBlock onLogin={onLogin}/>}*/}
+            <JoinBlock onLogin={onLogin}/>
+        </div>
+    );
 }
 
 export default App;
